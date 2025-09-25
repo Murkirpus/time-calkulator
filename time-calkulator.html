@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор времени</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .input-label {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: block;
+            font-weight: 600;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-field:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .time-unit {
+            display: inline-block;
+            margin: 0 8px;
+            padding: 5px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>⏰ Калькулятор времени</h1>
+        
+        <div class="input-group">
+            <label class="input-label">Секунды</label>
+            <input type="number" class="input-field" id="seconds" placeholder="Введите количество секунд...">
+            <div class="result" id="secondsResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Минуты</label>
+            <input type="number" class="input-field" id="minutes" placeholder="Введите количество минут...">
+            <div class="result" id="minutesResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Часы</label>
+            <input type="number" class="input-field" id="hours" placeholder="Введите количество часов...">
+            <div class="result" id="hoursResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Дни</label>
+            <input type="number" class="input-field" id="days" placeholder="Введите количество дней...">
+            <div class="result" id="daysResult"></div>
+        </div>
+
+        <button class="clear-btn" onclick="clearAll()">🔄 Очистить всё</button>
+        
+        <div class="footer">
+            Введите значение в любое поле для автоматического расчёта
+        </div>
+    </div>
+
+    <script>
+        function formatTime(totalSeconds) {
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            let result = [];
+            
+            // Показываем дни, если они есть
+            if (days > 0) result.push(`<span class="time-unit">${days} д</span>`);
+            
+            // Показываем часы, если они есть или если есть дни
+            if (hours > 0 || days > 0) {
+                result.push(`<span class="time-unit">${hours} ч</span>`);
+            }
+            
+            // Показываем минуты, если они есть или если есть часы/дни
+            if (minutes > 0 || hours > 0 || days > 0) {
+                result.push(`<span class="time-unit">${minutes} мин</span>`);
+            }
+            
+            // Показываем секунды, если они есть или если вообще нет других единиц
+            if (seconds > 0 || result.length === 0) {
+                result.push(`<span class="time-unit">${seconds} сек</span>`);
+            }
+            
+            return result.join(' ');
+        }
+
+        function convertSeconds() {
+            const seconds = parseFloat(document.getElementById('seconds').value) || 0;
+            const result = document.getElementById('secondsResult');
+            
+            if (seconds > 0) {
+                const totalSeconds = Math.round(seconds);
+                const days = Math.floor(totalSeconds / 86400);
+                let output = formatTime(totalSeconds);
+                
+                if (days > 0) {
+                    output = `${days} дней или ${output}`;
+                }
+                
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertMinutes() {
+            const minutes = parseFloat(document.getElementById('minutes').value) || 0;
+            const result = document.getElementById('minutesResult');
+            
+            if (minutes > 0) {
+                const totalSeconds = Math.round(minutes * 60);
+                const days = Math.floor(totalSeconds / 86400);
+                
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или ${formatTime(totalSeconds)}`;
+                
+                if (days > 0) {
+                    output = `<span class="time-unit">${days} д</span> или ` + output;
+                }
+                
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertHours() {
+            const hours = parseFloat(document.getElementById('hours').value) || 0;
+            const result = document.getElementById('hoursResult');
+            
+            if (hours > 0) {
+                const totalMinutes = Math.round(hours * 60);
+                const totalSeconds = Math.round(hours * 3600);
+                const days = Math.floor(totalSeconds / 86400);
+                
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или <span class="time-unit">${totalMinutes} мин</span> или ${formatTime(totalSeconds)}`;
+                
+                if (days > 0) {
+                    output = `<span class="time-unit">${days} д</span> или ` + output;
+                }
+                
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertDays() {
+            const days = parseFloat(document.getElementById('days').value) || 0;
+            const result = document.getElementById('daysResult');
+            
+            if (days > 0) {
+                const totalHours = Math.round(days * 24);
+                const totalMinutes = Math.round(days * 1440);
+                const totalSeconds = Math.round(days * 86400);
+                
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или <span class="time-unit">${totalMinutes} мин</span> или <span class="time-unit">${totalHours} ч</span> или ${formatTime(totalSeconds)}`;
+                
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('seconds').value = '';
+            document.getElementById('minutes').value = '';
+            document.getElementById('hours').value = '';
+            document.getElementById('days').value = '';
+            document.getElementById('secondsResult').style.display = 'none';
+            document.getElementById('minutesResult').style.display = 'none';
+            document.getElementById('hoursResult').style.display = 'none';
+            document.getElementById('daysResult').style.display = 'none';
+        }
+
+        // Добавляем обработчики событий
+        document.getElementById('seconds').addEventListener('input', convertSeconds);
+        document.getElementById('minutes').addEventListener('input', convertMinutes);
+        document.getElementById('hours').addEventListener('input', convertHours);
+        document.getElementById('days').addEventListener('input', convertDays);
+
+        // Добавляем анимацию при загрузке
+        window.addEventListener('load', () => {
+            document.querySelector('.calculator-container').style.animation = 'fadeIn 1s ease';
+        });
+    </script>
+</body>
+</html>
