@@ -1,0 +1,2 @@
+# time-calkulator
+Time Calkulator
