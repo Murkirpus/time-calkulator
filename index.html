@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Калькулятор времени</title>
+    
+    <!-- PWA Meta tags -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Калькулятор времени">
+    
+    <!-- Ссылка на отдельный манифест -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Простая иконка -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23667eea'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='white' font-size='60' font-weight='bold'%3ET%3C/text%3E%3C/svg%3E">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .calculator-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 400px;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            padding: 18px;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .input-group:hover, .input-group:focus-within {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-1px);
+        }
+
+        .input-label {
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            transition: all 0.3s ease;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            transform: scale(1.01);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        .input-field[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .result {
+            margin-top: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-align: center;
+            opacity: 0;
+            animation: fadeIn 0.4s ease forwards;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .time-unit {
+            display: inline-block;
+            margin: 0 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 16px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .clear-btn:hover, .clear-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+        }
+
+        .install-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            display: block;
+        }
+
+        .install-btn:hover, .install-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .install-btn.hidden {
+            display: none !important;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 15px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        #pwaStatus {
+            font-weight: 500;
+            margin-top: 5px;
+            transition: color 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .calculator-container {
+                padding: 20px;
+                border-radius: 20px;
+            }
+            
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 20px;
+            }
+            
+            .input-group {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .input-field {
+                padding: 14px;
+                font-size: 1rem;
+            }
+            
+            .time-unit {
+                margin: 0 4px;
+                padding: 3px 8px;
+                font-size: 0.8rem;
+            }
+        }
+
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .install-prompt button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>⏰ Калькулятор времени</h1>
+        
+        <div class="input-group">
+            <label class="input-label">Секунды</label>
+            <input type="number" step="any" class="input-field" id="seconds" placeholder="Введите количество секунд..." inputmode="decimal">
+            <div class="result" id="secondsResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Минуты</label>
+            <input type="number" step="any" class="input-field" id="minutes" placeholder="Введите количество минут..." inputmode="decimal">
+            <div class="result" id="minutesResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Часы</label>
+            <input type="number" step="any" class="input-field" id="hours" placeholder="Введите количество часов..." inputmode="decimal">
+            <div class="result" id="hoursResult"></div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Дни</label>
+            <input type="number" step="any" class="input-field" id="days" placeholder="Введите количество дней..." inputmode="decimal">
+            <div class="result" id="daysResult"></div>
+        </div>
+
+        <button class="clear-btn" onclick="clearAll()" type="button">🔄 Очистить всё</button>
+        
+        <!-- Кнопка установки -->
+        <button class="install-btn" id="installBtn" type="button">📱 Установить приложение</button>
+        
+        <div class="footer">
+            📱 <strong>Android PWA приложение</strong><br>
+            Поддерживает десятичные числа • Точные вычисления<br>
+            <small id="pwaStatus">Готово к установке</small>
+        </div>
+    </div>
+
+    <div class="install-prompt" id="installPrompt">
+        <p>📱 <strong>Установите приложение!</strong></p>
+        <p>Работает офлайн • Быстрый доступ</p>
+        <button id="installPromptBtn">✅ Установить</button>
+        <button id="cancelInstall">❌ Отмена</button>
+    </div>
+
+    <script>
+        function formatTime(totalSeconds) {
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            let result = [];
+            
+            if (days > 0) result.push(`<span class="time-unit">${days} д</span>`);
+            if (hours > 0 || days > 0) {
+                result.push(`<span class="time-unit">${hours} ч</span>`);
+            }
+            if (minutes > 0 || hours > 0 || days > 0) {
+                result.push(`<span class="time-unit">${minutes} мин</span>`);
+            }
+            if (seconds > 0 || result.length === 0) {
+                result.push(`<span class="time-unit">${seconds} сек</span>`);
+            }
+            
+            return result.join(' ');
+        }
+
+        function convertSeconds() {
+            const seconds = parseFloat(document.getElementById('seconds').value) || 0;
+            const result = document.getElementById('secondsResult');
+            
+            if (seconds > 0) {
+                const totalSeconds = Math.round(seconds);
+                let output = formatTime(totalSeconds);
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertMinutes() {
+            const minutes = parseFloat(document.getElementById('minutes').value) || 0;
+            const result = document.getElementById('minutesResult');
+            
+            if (minutes > 0) {
+                const totalSeconds = Math.round(minutes * 60);
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или ${formatTime(totalSeconds)}`;
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertHours() {
+            const hours = parseFloat(document.getElementById('hours').value) || 0;
+            const result = document.getElementById('hoursResult');
+            
+            if (hours > 0) {
+                const totalMinutes = Math.round(hours * 60);
+                const totalSeconds = Math.round(hours * 3600);
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или <span class="time-unit">${totalMinutes} мин</span> или ${formatTime(totalSeconds)}`;
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function convertDays() {
+            const days = parseFloat(document.getElementById('days').value) || 0;
+            const result = document.getElementById('daysResult');
+            
+            if (days > 0) {
+                const totalHours = Math.round(days * 24);
+                const totalMinutes = Math.round(days * 1440);
+                const totalSeconds = Math.round(days * 86400);
+                let output = `<span class="time-unit">${totalSeconds} сек</span> или <span class="time-unit">${totalMinutes} мин</span> или <span class="time-unit">${totalHours} ч</span> или ${formatTime(totalSeconds)}`;
+                result.innerHTML = output;
+                result.style.display = 'block';
+            } else {
+                result.style.display = 'none';
+            }
+        }
+
+        function clearAll() {
+            document.getElementById('seconds').value = '';
+            document.getElementById('minutes').value = '';
+            document.getElementById('hours').value = '';
+            document.getElementById('days').value = '';
+            document.getElementById('secondsResult').style.display = 'none';
+            document.getElementById('minutesResult').style.display = 'none';
+            document.getElementById('hoursResult').style.display = 'none';
+            document.getElementById('daysResult').style.display = 'none';
+        }
+
+        // PWA установка
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+        const installPrompt = document.getElementById('installPrompt');
+        const installPromptBtn = document.getElementById('installPromptBtn');
+        const cancelInstall = document.getElementById('cancelInstall');
+        const pwaStatus = document.getElementById('pwaStatus');
+
+        // Проверяем, установлено ли уже приложение
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            installBtn.style.display = 'none';
+            pwaStatus.textContent = '✅ Приложение установлено!';
+            pwaStatus.style.color = '#4CAF50';
+        }
+
+        // Перехватываем событие установки
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt сработал');
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+            pwaStatus.textContent = '📱 Готово к установке!';
+            pwaStatus.style.color = '#4CAF50';
+        });
+
+        // Обработчик кнопки установки
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                console.log('Показываем prompt установки');
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                console.log('Результат:', result);
+                
+                if (result.outcome === 'accepted') {
+                    pwaStatus.textContent = '✅ Устанавливается...';
+                    pwaStatus.style.color = '#4CAF50';
+                    installBtn.style.display = 'none';
+                }
+                
+                deferredPrompt = null;
+            } else {
+                // Показываем инструкцию для ручной установки
+                installPrompt.style.display = 'block';
+            }
+        });
+
+        // Обработчики popup'а
+        installPromptBtn.addEventListener('click', () => {
+            alert('📱 Для установки:\n\n1. Откройте меню Chrome (⋮)\n2. Найдите "Установить приложение"\n3. Нажмите "Установить"');
+            installPrompt.style.display = 'none';
+        });
+
+        cancelInstall.addEventListener('click', () => {
+            installPrompt.style.display = 'none';
+        });
+
+        // Успешная установка
+        window.addEventListener('appinstalled', () => {
+            console.log('Приложение установлено!');
+            installBtn.style.display = 'none';
+            installPrompt.style.display = 'none';
+            pwaStatus.textContent = '🎉 Приложение установлено!';
+            pwaStatus.style.color = '#4CAF50';
+        });
+
+        // Обработчики событий для полей
+        document.getElementById('seconds').addEventListener('input', convertSeconds);
+        document.getElementById('minutes').addEventListener('input', convertMinutes);
+        document.getElementById('hours').addEventListener('input', convertHours);
+        document.getElementById('days').addEventListener('input', convertDays);
+
+        // Регистрация Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('SW зарегистрирован'))
+                .catch(() => console.log('SW не зарегистрирован'));
+        }
+
+        // Анимация при загрузке
+        window.addEventListener('load', () => {
+            document.querySelector('.calculator-container').style.animation = 'fadeIn 0.8s ease';
+            
+            // Проверяем поддержку PWA
+            if (!('serviceWorker' in navigator)) {
+                pwaStatus.textContent = '⚠️ Используйте Chrome на Android';
+                pwaStatus.style.color = '#ff6b6b';
+                installBtn.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
