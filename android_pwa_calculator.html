@@ -119,10 +119,13 @@
             font-weight: 300;
             line-height: 1.2;
             word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
             min-height: 45px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .display-expression {
@@ -131,6 +134,9 @@
             margin-bottom: 10px;
             min-height: 18px;
             opacity: 0.8;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
         .buttons {
@@ -608,17 +614,42 @@
             clearAll();
         }
 
+        function formatNumber(num) {
+            const str = num.toString();
+            const parts = str.split('.');
+            const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            return parts.length > 1 ? `${intPart}.${parts[1]}` : intPart;
+        }
+
+        function adjustFontSize() {
+            const text = resultDisplay.textContent;
+            const length = text.length;
+            
+            if (length <= 10) {
+                resultDisplay.style.fontSize = '2.2rem';
+            } else if (length <= 15) {
+                resultDisplay.style.fontSize = '1.8rem';
+            } else if (length <= 20) {
+                resultDisplay.style.fontSize = '1.5rem';
+            } else if (length <= 25) {
+                resultDisplay.style.fontSize = '1.3rem';
+            } else {
+                resultDisplay.style.fontSize = '1.1rem';
+            }
+        }
+
         function updateDisplay() {
             if (currentMode === 'normal') {
-                resultDisplay.textContent = currentInput || '0';
+                resultDisplay.textContent = formatNumber(currentInput || '0');
                 let expression = '';
                 if (previousInput && operator) {
-                    expression = `${previousInput} ${getOperatorSymbol(operator)}`;
+                    expression = `${formatNumber(previousInput)} ${getOperatorSymbol(operator)}`;
                     if (currentInput && !shouldResetDisplay) {
-                        expression += ` ${currentInput}`;
+                        expression += ` ${formatNumber(currentInput)}`;
                     }
                 }
                 expressionDisplay.textContent = expression;
+                adjustFontSize();
             } else if (currentMode === 'speed') {
                 updateSpeedDisplay();
             } else {
@@ -681,7 +712,7 @@
             timeExpression = [];
             currentSpeedUnit = '';
             speedValue = '';
-            resultDisplay.style.fontSize = '';
+            resultDisplay.style.fontSize = '2.2rem';
             resultDisplay.style.lineHeight = '';
             resultDisplay.style.textAlign = '';
             updateDisplay();
@@ -694,10 +725,10 @@
             } else if (currentMode === 'speed') {
                 currentSpeedUnit = '';
                 speedValue = '';
-                resultDisplay.style.fontSize = '';
-                resultDisplay.style.lineHeight = '';
-                resultDisplay.style.textAlign = '';
             }
+            resultDisplay.style.fontSize = '2.2rem';
+            resultDisplay.style.lineHeight = '';
+            resultDisplay.style.textAlign = '';
             updateDisplay();
         }
 
@@ -763,6 +794,7 @@
             } else {
                 resultDisplay.textContent = '0';
             }
+            adjustFontSize();
         }
 
         function calculateTimeExpression() {
@@ -913,6 +945,7 @@
                 expressionDisplay.textContent = 'Введите скорость';
                 resultDisplay.textContent = '0';
             }
+            adjustFontSize();
         }
 
         function convertSpeed() {
