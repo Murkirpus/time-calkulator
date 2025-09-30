@@ -175,6 +175,7 @@
 
         .btn:active {
             transform: scale(0.95);
+            filter: brightness(1.2);
         }
 
         .btn.operator {
@@ -338,28 +339,32 @@
         <!-- Normal Calculator Buttons -->
         <div class="buttons" id="normalButtons">
             <button class="btn clear" onclick="clearAll()">AC</button>
-            <button class="btn clear" onclick="clearEntry()">C</button>
+            <button class="btn operator" onclick="calculatePercent()">%</button>
             <button class="btn operator" onclick="appendOperator('/')">÷</button>
-            <button class="btn operator" onclick="appendOperator('*')">×</button>
+            <button class="btn clear" onclick="deleteLastChar()">⌫</button>
 
             <button class="btn number" onclick="appendNumber('7')">7</button>
             <button class="btn number" onclick="appendNumber('8')">8</button>
             <button class="btn number" onclick="appendNumber('9')">9</button>
-            <button class="btn operator" onclick="appendOperator('-')">−</button>
+            <button class="btn operator" onclick="appendOperator('*')">×</button>
 
             <button class="btn number" onclick="appendNumber('4')">4</button>
             <button class="btn number" onclick="appendNumber('5')">5</button>
             <button class="btn number" onclick="appendNumber('6')">6</button>
-            <button class="btn operator" onclick="appendOperator('+')">+</button>
+            <button class="btn operator" onclick="appendOperator('-')">−</button>
 
             <button class="btn number" onclick="appendNumber('1')">1</button>
             <button class="btn number" onclick="appendNumber('2')">2</button>
             <button class="btn number" onclick="appendNumber('3')">3</button>
+            <button class="btn operator" onclick="appendOperator('+')">+</button>
+
+            <button class="btn operator" onclick="appendBracket('(')">(</button>
+            <button class="btn number" onclick="appendNumber('0')">0</button>
+            <button class="btn operator" onclick="appendBracket(')')">)</button>
             <button class="btn number" onclick="appendNumber('.')">.</button>
 
-            <button class="btn number zero" onclick="appendNumber('0')">0</button>
             <button class="btn number" onclick="appendNumber('00')">00</button>
-            <button class="btn equals" onclick="calculate()">=</button>
+            <button class="btn equals" onclick="calculate()" style="grid-column: span 3;">=</button>
         </div>
 
         <!-- Time Calculator Buttons -->
@@ -537,6 +542,8 @@
         let timeExpression = [];
         let currentSpeedUnit = '';
         let speedValue = '';
+        let fullExpression = '';
+        let openBrackets = 0;
 
         const resultDisplay = document.getElementById('result');
         const expressionDisplay = document.getElementById('expression');
@@ -638,17 +645,25 @@
             }
         }
 
+        function formatExpression(expr) {
+            // Форматируем числа в выражении с пробелами
+            // Учитываем десятичные числа (с точкой)
+            return expr.replace(/\d+\.?\d*/g, match => formatNumber(match));
+        }
+
         function updateDisplay() {
             if (currentMode === 'normal') {
-                resultDisplay.textContent = formatNumber(currentInput || '0');
-                let expression = '';
-                if (previousInput && operator) {
-                    expression = `${formatNumber(previousInput)} ${getOperatorSymbol(operator)}`;
-                    if (currentInput && !shouldResetDisplay) {
-                        expression += ` ${formatNumber(currentInput)}`;
-                    }
+                // Показываем полное выражение в верхней строке с форматированием
+                expressionDisplay.textContent = formatExpression(fullExpression) || '';
+                
+                // Показываем текущий ввод или результат в нижней строке
+                if (currentInput !== '') {
+                    resultDisplay.textContent = formatNumber(currentInput);
+                } else if (fullExpression !== '') {
+                    resultDisplay.textContent = formatExpression(fullExpression);
+                } else {
+                    resultDisplay.textContent = '0';
                 }
-                expressionDisplay.textContent = expression;
                 adjustFontSize();
             } else if (currentMode === 'speed') {
                 updateSpeedDisplay();
@@ -665,6 +680,7 @@
         function appendNumber(number) {
             if (shouldResetDisplay) {
                 currentInput = '';
+                fullExpression = '';
                 shouldResetDisplay = false;
             }
             if (number === '.' && currentInput.includes('.')) return;
@@ -673,6 +689,7 @@
             } else {
                 currentInput += number;
             }
+            fullExpression += number;
             updateDisplay();
         }
 
@@ -693,13 +710,107 @@
                 return;
             }
 
-            if (currentInput === '' && previousInput === '') return;
-            if (previousInput !== '' && currentInput !== '' && !shouldResetDisplay) {
-                calculate();
+            // Если был результат (shouldResetDisplay=true), продолжаем с ним
+            if (shouldResetDisplay && currentInput !== '') {
+                fullExpression = currentInput;
+                shouldResetDisplay = false;
             }
-            operator = op;
-            previousInput = currentInput || previousInput;
-            shouldResetDisplay = true;
+
+            if (currentInput === '' && fullExpression === '') return;
+            
+            // Проверка на двойные операторы
+            const lastChar = fullExpression.slice(-1);
+            if (['+', '-', '*', '/'].includes(lastChar) && ['+', '-', '*', '/'].includes(op)) {
+                fullExpression = fullExpression.slice(0, -1) + op;
+            } else {
+                if (currentInput !== '') {
+                    fullExpression += op;
+                    currentInput = '';
+                } else if (fullExpression !== '' && !['+', '-', '*', '/'].includes(lastChar)) {
+                    fullExpression += op;
+                }
+            }
+            updateDisplay();
+        }
+
+        function appendBracket(bracket) {
+            if (bracket === '(') {
+                // Если перед скобкой цифра, добавляем умножение
+                const lastChar = fullExpression.slice(-1);
+                if (currentInput !== '' || (!isNaN(lastChar) && lastChar !== '')) {
+                    fullExpression += '*';
+                }
+                fullExpression += '(';
+                openBrackets++;
+                currentInput = '';
+            } else if (bracket === ')') {
+                if (openBrackets > 0) {
+                    // Проверяем, что последний символ не открывающая скобка
+                    if (fullExpression.slice(-1) !== '(') {
+                        fullExpression += ')';
+                        openBrackets--;
+                        currentInput = '';
+                    }
+                }
+            }
+            updateDisplay();
+        }
+
+        function deleteLastChar() {
+            if (currentInput !== '') {
+                currentInput = currentInput.slice(0, -1);
+                fullExpression = fullExpression.slice(0, -1);
+            } else if (fullExpression !== '') {
+                const lastChar = fullExpression.slice(-1);
+                if (lastChar === '(') openBrackets--;
+                if (lastChar === ')') openBrackets++;
+                fullExpression = fullExpression.slice(0, -1);
+                
+                // Восстанавливаем currentInput если удалили оператор
+                const operators = ['+', '-', '*', '/', '(', ')'];
+                if (!operators.includes(lastChar)) {
+                    const parts = fullExpression.split(/[\+\-\*\/\(\)]/);
+                    currentInput = parts[parts.length - 1] || '';
+                }
+            }
+            updateDisplay();
+        }
+
+        function calculatePercent() {
+            // Если нет текущего ввода, ничего не делаем
+            if (currentInput === '') return;
+            
+            const num = parseFloat(currentInput);
+            if (isNaN(num)) return;
+            
+            // Ищем последний оператор и число перед ним
+            const beforeCurrent = fullExpression.slice(0, -currentInput.length);
+            const match = beforeCurrent.match(/(\d+\.?\d*)\s*[\+\-\*\/]\s*$/);
+            
+            if (match) {
+                // Есть предыдущее число и оператор
+                const baseNum = parseFloat(match[1]);
+                const operator = beforeCurrent.trim().slice(-1);
+                
+                let percentValue;
+                if (operator === '+' || operator === '-') {
+                    // Для + и - процент вычисляется от базового числа
+                    percentValue = (baseNum * num / 100);
+                } else {
+                    // Для * и / процент это просто деление на 100
+                    percentValue = (num / 100);
+                }
+                
+                // Заменяем текущий ввод на вычисленное значение процента
+                fullExpression = beforeCurrent + percentValue.toString();
+                currentInput = percentValue.toString();
+            } else {
+                // Нет предыдущего числа - просто делим на 100
+                const percentValue = (num / 100);
+                fullExpression = percentValue.toString();
+                currentInput = percentValue.toString();
+            }
+            
             updateDisplay();
         }
 
@@ -712,6 +823,8 @@
             timeExpression = [];
             currentSpeedUnit = '';
             speedValue = '';
+            fullExpression = '';
+            openBrackets = 0;
             resultDisplay.style.fontSize = '2.2rem';
             resultDisplay.style.lineHeight = '';
             resultDisplay.style.textAlign = '';
@@ -733,30 +846,43 @@
         }
 
         function calculate() {
-            if (previousInput === '' || currentInput === '' || operator === '') return;
-            const prev = parseFloat(previousInput);
-            const current = parseFloat(currentInput);
-            let result;
-
-            switch (operator) {
-                case '+': result = prev + current; break;
-                case '-': result = prev - current; break;
-                case '*': result = prev * current; break;
-                case '/':
-                    if (current === 0) {
-                        alert('Деление на ноль невозможно!');
-                        return;
-                    }
-                    result = prev / current;
-                    break;
-                default: return;
+            if (fullExpression === '') return;
+            
+            try {
+                // Закрываем все открытые скобки
+                let expr = fullExpression;
+                while (openBrackets > 0) {
+                    expr += ')';
+                    openBrackets--;
+                }
+                
+                // Безопасное вычисление выражения
+                // Заменяем операторы для безопасности
+                expr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+                
+                // Проверяем, что выражение содержит только допустимые символы
+                if (!/^[0-9+\-*/.() ]+$/.test(expr)) {
+                    throw new Error('Недопустимое выражение');
+                }
+                
+                // Вычисляем результат
+                const result = Function('"use strict"; return (' + expr + ')')();
+                
+                if (!isFinite(result)) {
+                    alert('Ошибка вычисления!');
+                    return;
+                }
+                
+                currentInput = result % 1 === 0 ? result.toString() : parseFloat(result.toFixed(10)).toString();
+                fullExpression = currentInput;
+                operator = '';
+                previousInput = '';
+                shouldResetDisplay = true;
+                updateDisplay();
+            } catch (error) {
+                alert('Ошибка в выражении!');
+                console.error(error);
             }
-
-            currentInput = result % 1 === 0 ? result.toString() : parseFloat(result.toFixed(10)).toString();
-            operator = '';
-            previousInput = '';
-            shouldResetDisplay = true;
-            updateDisplay();
         }
 
         // Time functions
@@ -1018,27 +1144,60 @@
         // Keyboard support
         document.addEventListener('keydown', (event) => {
             const key = event.key;
-            if ('0123456789.'.includes(key)) {
-                appendNumber(key);
-            } else if (key === '+' || key === '-') {
-                appendOperator(key);
-            } else if ((key === '*' || key === '/') && currentMode === 'normal') {
-                appendOperator(key);
-            } else if (key === 'Enter' || key === '=') {
-                if (currentMode === 'time') calculateTime();
-                else calculate();
-            } else if (key === 'Escape') {
-                clearAll();
-            } else if (key === 'Backspace') {
-                clearEntry();
+            if (currentMode === 'normal') {
+                if ('0123456789.'.includes(key)) {
+                    appendNumber(key);
+                } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                    appendOperator(key);
+                } else if (key === '(' || key === ')') {
+                    appendBracket(key);
+                } else if (key === '%') {
+                    calculatePercent();
+                } else if (key === 'Enter' || key === '=') {
+                    calculate();
+                } else if (key === 'Escape') {
+                    clearAll();
+                } else if (key === 'Backspace') {
+                    deleteLastChar();
+                }
+            } else {
+                if ('0123456789.'.includes(key)) {
+                    appendNumber(key);
+                } else if (key === '+' || key === '-') {
+                    appendOperator(key);
+                } else if ((key === '*' || key === '/') && currentMode === 'normal') {
+                    appendOperator(key);
+                } else if (key === 'Enter' || key === '=') {
+                    if (currentMode === 'time') calculateTime();
+                    else calculate();
+                } else if (key === 'Escape') {
+                    clearAll();
+                } else if (key === 'Backspace') {
+                    clearEntry();
+                }
             }
         });
 
-        // Touch feedback
-        document.querySelectorAll('.btn').forEach(button => {
-            button.addEventListener('touchstart', () => {
-                if (navigator.vibrate) navigator.vibrate(75);
-            }, { passive: true });
+        // Simple auto-initialization
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (navigator.vibrate) {
+                    navigator.vibrate(1);
+                }
+            }, 100);
+        });
+
+        // Touch feedback - vibrate only on release (click)
+        document.body.addEventListener('click', (event) => {
+            if (event.target.classList.contains('btn') || event.target.closest('.btn')) {
+                try {
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                } catch (e) {
+                    console.log('Vibration not supported');
+                }
+            }
         });
 
         updateDisplay();
